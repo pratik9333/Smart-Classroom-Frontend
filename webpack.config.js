@@ -1,130 +1,203 @@
-const path = require('path')
-const webpack = require('webpack')
+const path = require('path');
+const crypto = require('crypto');
+const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const ExtractCssChunks = require('extract-css-chunks-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
+const ScriptExtHtmlWebpackPlugin = require('script-ext-html-webpack-plugin');
+const {GenerateSW} = require('workbox-webpack-plugin');
+const WebpackPwaManifest = require('webpack-pwa-manifest');
+const FriendlyErrorsWebpackPlugin = require('friendly-errors-webpack-plugin');
 
-const TerserPlugin = require('terser-webpack-plugin')
-const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin')
-const HtmlWebpackPlugin = require('html-webpack-plugin')
-const DashboardPlugin = require('webpack-dashboard/plugin')
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
-const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin')
-
-const isProduction = process.env.NODE_ENV === 'production'
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
 module.exports = {
-  devServer: {
-    historyApiFallback: true,
-    hot: true,
-    inline: true,
-    overlay: true,
-    stats: 'minimal'
-  },
-  devtool: isProduction ? 'source-map' : 'eval-source-map',
-  entry: './src/index',
-  mode: process.env.NODE_ENV,
-  module: {
-    rules: [
-      {
-        test: /\.(ts|js)x?$/,
-        exclude: /node_modules/,
-        use: [
-          {
-            loader: 'babel-loader',
-            options: {
-              cacheDirectory: true
-            }
-          },
-          {
-            loader: 'ts-loader',
-            options: {
-              transpileOnly: true,
-              experimentalWatchApi: true
-            }
-          }
-        ]
-      },
-      {
-        test: /\.jpg|png$/,
-        use: [
-          {
-            loader: 'file-loader',
-            options: {
-              name: isProduction ? '[name].[hash].[ext]' : '[name].[ext]'
-            }
-          },
-          {
-            loader: 'image-webpack-loader',
-            options: {
-              bypassOnDebug: true,
-              mozjpeg: {
-                progressive: true,
-                quality: 80
-              },
-              optipng: {
-                optimizationLevel: 7
-              },
-              pngquant: {
-                enabled: false
-              }
-            }
-          }
-        ]
-      },
-      {
-        test: /\.svg/,
-        loader: 'url-loader',
-        options: {
-          limit: 10000,
-          mimetype: 'image/svg+xml'
-        }
-      },
-      {
-        test: /\.html$/,
-        loader: 'html-loader',
-        options: {
-          interpolate: true,
-          minimize: isProduction
-        }
-      }
-    ]
-  },
-  output: {
-    filename: isProduction ? '[name].[hash].js' : '[name].js',
-    path: path.resolve('./dist')
-  },
-  optimization: {
-    minimizer: [
-      new TerserPlugin({
-        sourceMap: true,
-        extractComments: true
-      })
-    ]
-  },
-  resolve: {
-    extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
-    modules: ['node_modules', 'src'],
-    plugins: [new TsconfigPathsPlugin()]
-  },
-  plugins: getPlugins()
-}
+	mode: isDevelopment ? 'development' : 'production',
+	entry: './src/index.js',
+	output: {
+		path: path.resolve(__dirname, 'dist'),
+		filename: !isDevelopment ? '[name].[chunkhash].js' : '[name].js',
+		chunkFilename: !isDevelopment ? '[name].[chunkhash].chunk.js' : '[name].chunk.js'
+	},
+	optimization: {
+		minimize: !isDevelopment,
+		minimizer: [
+			new TerserPlugin({
+				terserOptions: {
+					parse: {
+						ecma: 8
+					},
+					compress: {
+						ecma: 5,
+						warnings: false,
+						comparisons: false,
+						inline: 2
+					},
+					mangle: {safari10: true},
+					output: {
+						ecma: 5,
+						safari10: true,
+						comments: false,
+						// eslint-disable-next-line camelcase
+						ascii_only: true
+					}
+				},
+				parallel: true,
+				sourceMap: false,
+				cache: true
+			})
+		],
+		splitChunks: {
+			chunks: 'all',
+			cacheGroups: {
+				default: false,
+				defaultVendors: false,
+				framework: {
+					chunks: 'all',
+					name: 'framework',
+					test: /(?<!node_modules.*)[\\/]node_modules[\\/](react|react-dom|scheduler|prop-types|use-subscription)[\\/]/,
+					priority: 40,
+					enforce: true
+				},
+				lib: {
+					test(module) {
+						return (
+							module.size() > 160000 &&
+							/node_modules[/\\]/.test(module.identifier())
+						);
+					},
+					name(module) {
+						const hash = crypto.createHash('sha1');
+						if (module.type === 'css/extract-css-chunks') {
+							module.updateHash(hash);
+						} else if (!module.libIdent) {
+							throw new Error(
+								`Encountered unknown module type: ${module.type}. Please open an issue.`
+							);
+						}
 
-function getPlugins() {
-  const plugins = [
-    new HtmlWebpackPlugin({
-      template: './src/index.html'
-    }),
-    new webpack.DefinePlugin({
-      'process.env.NODE_ENV': `"${process.env.NODE_ENV}"`
-    }),
-    new ForkTsCheckerWebpackPlugin()
-  ]
-
-  if (!isProduction) {
-    plugins.push(new DashboardPlugin())
-  }
-
-  if (process.env.WEBPACK_BUNDLE_ANALYZER) {
-    plugins.push(new BundleAnalyzerPlugin())
-  }
-
-  return plugins
-}
+						return hash.digest('hex').slice(0, 8);
+					},
+					priority: 30,
+					minChunks: 1,
+					reuseExistingChunk: true
+				},
+				commons: {
+					name: 'commons',
+					minChunks: 2,
+					priority: 20
+				},
+				shared: {
+					name(module, chunks) {
+						return crypto
+							.createHash('sha1')
+							.update(
+								chunks.reduce(
+									(acc, chunk) => {
+										return acc + chunk.name;
+									},
+									''
+								)
+							)
+							.digest('hex') + (module.type === 'css/extract-css-chunks' ? '_CSS' : '');
+					},
+					priority: 10,
+					minChunks: 2,
+					reuseExistingChunk: true
+				}
+			},
+			maxInitialRequests: 25,
+			minSize: 20000
+		}
+	},
+	devServer: {
+		compress: true,
+		quiet: true,
+		hot: true
+	},
+	module: {
+		rules: [
+			{
+				test: /\.jsx?$/,
+				exclude: /node_modules/,
+				use: 'babel-loader?cacheDirectory=true'
+			},
+			{
+				test: /\.css$/,
+				use: [
+					ExtractCssChunks.loader,
+					'css-loader',
+					'clean-css-loader'
+				]
+			},
+			{
+				test: /\.(jpe?g|png|webp|gif|svg|ico)$/i,
+				use: [
+					{
+						loader: 'file-loader',
+						options: {
+							outputPath: 'public'
+						}
+					}
+				]
+			},
+			{
+				test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
+				use: [
+					'file-loader'
+				]
+			}
+		]
+	},
+	plugins: [
+		new HtmlWebpackPlugin({
+			template: './public/index.html',
+			favicon: './public/favicon.png',
+			minify: {
+				removeComments: true,
+				collapseWhitespace: true,
+				removeRedundantAttributes: true,
+				useShortDoctype: true,
+				removeEmptyAttributes: true,
+				removeStyleLinkTypeAttributes: true,
+				removeScriptTypeAttributes: true,
+				keepClosingSlash: true,
+				minifyJS: true,
+				minifyCSS: true,
+				minifyURLs: true
+			}
+		}),
+		new ExtractCssChunks(
+			{
+				filename: '[name].css',
+				chunkFilename: '[id].css',
+				hot: true
+			}
+		),
+		new ScriptExtHtmlWebpackPlugin({
+			prefetch: [/\.js$/],
+			defaultAttribute: 'async'
+		}),
+		/* eslint-disable camelcase */
+		new WebpackPwaManifest({
+			name: 'Hello World',
+			short_name: 'Hello World',
+			description: 'Styled React Boilerplate Demo',
+			theme_color: '#131415',
+			background_color: '#131415',
+			icons: [
+				{
+					src: path.resolve('public/favicon.png'),
+					sizes: [36, 48, 72, 96, 144, 192, 512],
+					ios: true
+				}
+			]
+		}),
+		/* eslint-enable camelcase */
+		new GenerateSW({
+			swDest: 'sw.js'
+		}),
+		new FriendlyErrorsWebpackPlugin(),
+		isDevelopment && new ReactRefreshWebpackPlugin()
+	].filter(Boolean)
+};

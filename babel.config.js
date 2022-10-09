@@ -1,39 +1,28 @@
-module.exports = {
-  presets: [
-    [
-      '@babel/preset-env',
-      {
-        useBuiltIns: 'usage',
-        corejs: '3'
-      }
-    ],
-    '@babel/preset-react'
-  ],
-  plugins: [
-    [
-      'babel-plugin-transform-imports',
-      {
-        '@material-ui/core': {
-          transform: '@material-ui/core/${member}',
-          preventFullImport: true
-        },
-        '@material-ui/icons': {
-          transform: '@material-ui/icons/${member}',
-          preventFullImport: true
-        },
-        lodash: {
-          transform: 'lodash/${member}',
-          preventFullImport: true
-        }
-      }
-    ]
-  ],
-  env: {
-    development: {
-      plugins: ['react-hot-loader/babel']
-    },
-    production: {
-      plugins: ['@babel/plugin-transform-react-constant-elements', '@babel/plugin-transform-react-inline-elements']
-    }
-  }
-}
+module.exports = api => {
+	api.cache.using(() => process.env.NODE_ENV);
+
+	const presets = [
+		['@babel/preset-env', {
+			targets: {
+				esmodules: true
+			},
+			corejs: '3.6',
+			useBuiltIns: 'usage',
+			bugfixes: true
+		}],
+		'@babel/preset-react'
+	];
+
+	const plugins = [
+		['babel-plugin-styled-components', {
+			minify: true,
+			pure: true
+		}]
+	];
+
+	if (!api.env('production') && !api.env('test')) {
+		plugins.push(['react-refresh/babel']);
+	}
+
+	return {presets, plugins};
+};

@@ -1,48 +1,106 @@
-# React-Typescript-Material-Boilerplate
+# Styled React Boilerplate ⚛️ 💅
 
-![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg) ![License: MIT](https://img.shields.io/badge/license-MIT-brightgreen.svg) [![likeadev](https://img.shields.io/twitter/follow/likeadev?style=social)](https://twitter.com/likeadev)
+> Minimal & Modern Boilerplate for building apps with React & styled-components
 
-A boilerplate+ built using React, Redux, TypeScript and Material-UI. It contains basic pre-baked components and utilities to get your project started quickly. Implements guidelines of [Hierarchical Front-end Structure](https://github.com/petejank/hierarchical-front-end-structure).
+[![Build Status](https://travis-ci.org/xxczaki/styled-react-boilerplate.svg?branch=master)](https://travis-ci.org/xxczaki/styled-react-boilerplate)
+[![XO code style](https://img.shields.io/badge/code_style-XO-5ed9c7.svg)](https://github.com/xojs/xo)
+[![style: styled-components](https://img.shields.io/badge/style-%F0%9F%92%85%20styled--components-orange.svg?colorB=daa357&colorA=db748e)](https://github.com/styled-components/styled-components)
 
-The package includes:
+[**Demo Site**](https://styled-react-boilerplate.now.sh) •
+[**FAQ**](#faq)
 
-- sign-in page (any login/password combination will be accepted)
-- dashboard page fetching JSON data from external source (courtesy of [JSONPlaceholder](https://jsonplaceholder.typicode.com))
-- placeholder of authentication mechanism. Stores token in `localStorage`
-- basic tests utilising Jest and [React Testing Library](https://github.com/testing-library/react-testing-library)
+---
 
-## Requirements
+![](https://lighthouse.now.sh/?perf=100&pwa=100&a11y=100&bp=100&seo=100)
 
-- `Node.js >= 10.0.0`
-- `Yarn >= 1.0.0`
+## Highlights
 
-## Quick Start
+- Less complex than [create-react-app](https://github.com/facebook/create-react-app)
+- Features styled-components
+- Uses React Hooks
+- Includes optimized Webpack & Babel configuration
+- Perfect Lighthouse score
+- Non-blocking CSS & fonts loading
+- Friendly errors & warnings
+- Ensures clean code with xo & stylelint
+- Normalizes default browser style with modern-normalize
+- HTML template with social media meta tags
+- Targets the latest browsers
+- Works offline
+- Preconfigured React Refresh using [react-refresh-webpack-plugin](https://github.com/pmmmwh/react-refresh-webpack-plugin)
 
-1. `git clone git@github.com:petejank/react-typescript-material-boilerplate.git` - clone the repository
-2. `cd react-typescript-material-boilerplate` - enter the cloned directory
-3. `yarn install` - install dependencies using Yarn
-4. `yarn start` - run the development server
-5. Access http://localhost:8080/
+## File Tree
+```bash
+├── public                # Folder for static assets
+│   ├── favicon.png       # Favicon
+│   └── index.html        # HTML template
+├── src                   # Main folder
+│   ├── components        # Subfolder with components
+│   │   ├── button.js
+│   │   └── container.js
+│   │   └── counter.js
+│   │   └── header.js
+│   │   └── image.js
+│   └── app.js            # Main page file
+│   └── index.js          # React DOM, service worker config
+├── webpack.config.js     # Webpack config
+├── babel.config.js       # Babel config
+```
 
-## Available Run Scripts
+## Usage
+```bash
+# Install dependencies
 
-Remember to first install required node dependencies through `yarn install` (preffered) or `npm install`.
+ $ npm install
 
-To run tasks type `yarn <taskNameHere>` or `npm run <taskNameHere>`. Tasks list:
+# Start webpack-dev-server at port 8080
 
-- `start` - run Webpack development server
-- `build` - build the project in development mode
-- `build:prod` - build the project in production mode
-- `lint` - prettifies and then lints ts* and js* files
-- `test` - run tests and terminate. Usable in CI environments
-- `test:watch` - run tests in watch mode. Usable for development
-- `test:coverage` - run tests and generate test coverage report
-- `bundle-analyzer` - runs bundle analyzer of the production build
+ $ npm start
 
-## Contribution
+# Run linters
 
-Feel free to create an issue or a PR if you have an idea on how to improve this repository.
+ $ npm test
 
-## License
+# Build app for production (gets output in the 'dist' directory)
 
-This work is licensed under [MIT license](LICENSE)
+ $ npm run build
+```
+
+## FAQ
+
+### How to deploy my app?
+
+I recommend to use either [Vercel](https://vercel.com) or [Netlify](https://netlify.com) for hosting your site.
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/project?template=https://github.com/xxczaki/styled-react-boilerplate)
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/xxczaki/styled-react-boilerplate)
+
+### How to add & use static assets (ex. images)?
+
+Place them in the `public` directory in the root of the project. You can then use them like in the example below:
+
+```js
+// Import files from the `public` directory
+import imgSrc from '../../public/favicon.png';
+
+// Then you can reference it like so:
+const Image = () => (
+	<img src={imgSrc} alt="⚡"/>
+);
+```
+
+Check out the [`Image` component](src/components/image.js) for a live example.
+
+## TODO
+
+- [x] PWA
+- [x] Testing
+- [ ] module & nomodule support
+
+## Related
+
+- [static-webpack-boilerplate](https://github.com/xxczaki/static-webpack-boilerplate)
+
+### License
+
+MIT
